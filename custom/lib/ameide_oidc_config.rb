@@ -3,10 +3,6 @@ require 'uri'
 module AmeideOidcConfig
   module_function
 
-  def enabled?
-    ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_AMEIDE_OIDC_LOGIN', false))
-  end
-
   def account_name
     ENV.fetch('AMEIDE_CHATWOOT_ACCOUNT_NAME', 'Ameide')
   end

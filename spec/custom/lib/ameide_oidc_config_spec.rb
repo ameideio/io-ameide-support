@@ -9,6 +9,14 @@ RSpec.describe AmeideOidcConfig do
     end
   end
 
+  describe '.post_logout_redirect_uri' do
+    it 'defaults to the support login page when no override is provided' do
+      with_modified_env FRONTEND_URL: 'https://support.example.com' do
+        expect(described_class.post_logout_redirect_uri).to eq('https://support.example.com/app/login')
+      end
+    end
+  end
+
   describe '.logout_redirect_link' do
     it 'builds a keycloak logout url with the configured client and redirect uri' do
       with_modified_env \
