@@ -68,7 +68,7 @@ export default {
   },
   created() {
     if (this.redirectingToOidc) {
-      window.location = '/auth/ameide_oidc';
+      this.submitOidcRequest();
       return;
     }
     if (this.ssoAuthToken) {
@@ -88,6 +88,27 @@ export default {
     }
   },
   methods: {
+    submitOidcRequest() {
+      const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.action = '/auth/ameide_oidc';
+      form.style.display = 'none';
+
+      if (csrfToken) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'authenticity_token';
+        tokenInput.value = csrfToken;
+        form.appendChild(tokenInput);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+    },
     getTranslatedMessage(key) {
       // Avoid dynamic key warning by handling each case explicitly
       switch (key) {
@@ -234,7 +255,7 @@ export default {
             lg
             class="w-full"
             :label="supportLoginCopy.retryLabel"
-            @click="window.location = '/auth/ameide_oidc'"
+            @click="submitOidcRequest"
           />
         </template>
       </div>

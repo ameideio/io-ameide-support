@@ -13,6 +13,9 @@ vi.mock('dashboard/composables', () => ({
 }));
 
 describe('Support login page', () => {
+  let createElementSpy;
+  let appendChildSpy;
+
   const createWrapper = props =>
     mount(LoginIndex, {
       props,
@@ -46,6 +49,17 @@ describe('Support login page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    appendChildSpy = vi.spyOn(document.body, 'appendChild');
+    createElementSpy = vi.spyOn(document, 'createElement');
+    document.head.innerHTML = `
+      <meta name="csrf-token" content="csrf-token-value" />
+    `;
+  });
+
+  afterEach(() => {
+    createElementSpy?.mockRestore();
+    appendChildSpy?.mockRestore();
+    document.head.innerHTML = '';
   });
 
   it('does not render the stock email and password form on auth errors', () => {
@@ -72,5 +86,31 @@ describe('Support login page', () => {
       ssoAccountId: '',
       ssoConversationId: '',
     });
+  });
+
+  it('starts the oidc flow with a form post', () => {
+    const submit = vi.fn();
+    createElementSpy.mockImplementation(tagName => {
+      const element = document.createElementNS(
+        'http://www.w3.org/1999/xhtml',
+        tagName
+      );
+      if (tagName === 'form') {
+        element.submit = submit;
+      }
+      return element;
+    });
+
+    createWrapper({});
+
+    expect(appendChildSpy).toHaveBeenCalled();
+    expect(submit).toHaveBeenCalled();
+
+    const form = appendChildSpy.mock.calls[0][0];
+    expect(form.method).toBe('post');
+    expect(form.action).toBe('http://localhost:3000/auth/ameide_oidc');
+    expect(form.querySelector('input[name="authenticity_token"]').value).toBe(
+      'csrf-token-value'
+    );
   });
 });

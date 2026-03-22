@@ -2,17 +2,17 @@ require 'rails_helper'
 
 describe '/app/login', type: :request do
   context 'without DEFAULT_LOCALE' do
-    it 'redirects to ameide oidc' do
+    it 'renders the dashboard shell for the oidc auto-submit flow' do
       get '/app/login'
-      expect(response).to redirect_to('/auth/ameide_oidc')
+      expect(response).to have_http_status(:success)
     end
   end
 
   context 'with DEFAULT_LOCALE' do
-    it 'still redirects to ameide oidc' do
+    it 'still renders the dashboard shell for the oidc auto-submit flow' do
       with_modified_env DEFAULT_LOCALE: 'pt_BR' do
         get '/app/login'
-        expect(response).to redirect_to('/auth/ameide_oidc')
+        expect(response).to have_http_status(:success)
       end
     end
   end
