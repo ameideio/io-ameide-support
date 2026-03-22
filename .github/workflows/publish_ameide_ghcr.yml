@@ -60,6 +60,8 @@ jobs:
           context: .
           file: /tmp/io-ameide-support.Dockerfile
           platforms: ${{ matrix.platform }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           push: true
           outputs: type=image,name=${{ env.IMAGE_REPO }},push-by-digest=true,name-canonical=true,push=true
 
