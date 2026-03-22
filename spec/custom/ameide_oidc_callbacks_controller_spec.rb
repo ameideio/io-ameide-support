@@ -48,6 +48,20 @@ RSpec.describe Custom::AmeideOidcCallbacksController, type: :controller do
       end
     end
 
+    it 'accepts an omniauth provider value returned as a symbol' do
+      with_modified_env(
+        FRONTEND_URL: 'http://test.host',
+        AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent',
+        AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+      ) do
+        request.env['omniauth.auth'] = auth_hash.deep_dup.tap { |value| value['provider'] = :ameide_oidc }
+
+        get :success
+
+        expect(response).to redirect_to(%r{\Ahttp://test\.host/app/login\?email=.+&sso_auth_token=.+\z})
+      end
+    end
+
     it 'fails closed when omniauth auth is missing' do
       with_modified_env(FRONTEND_URL: 'http://test.host') do
         get :success

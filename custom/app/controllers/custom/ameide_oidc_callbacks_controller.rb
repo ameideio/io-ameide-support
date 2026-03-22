@@ -1,7 +1,7 @@
 class Custom::AmeideOidcCallbacksController < ApplicationController
   def success
     auth = request.env['omniauth.auth']
-    return redirect_to_login(error: 'ameide-oidc-authentication-failed') unless auth&.dig('provider') == 'ameide_oidc'
+    return redirect_to_login(error: 'ameide-oidc-authentication-failed') unless provider_for(auth) == 'ameide_oidc'
 
     resource = AmeideOidcUserBuilder.new(auth).perform
     return redirect_to_login(error: 'ameide-oidc-authentication-failed') unless resource.persisted?
@@ -21,6 +21,11 @@ class Custom::AmeideOidcCallbacksController < ApplicationController
   end
 
   private
+
+  def provider_for(auth)
+    provider = auth&.dig('provider').presence || auth&.dig(:provider).presence || auth&.provider.presence
+    provider&.to_s
+  end
 
   def redirect_to_login(error: nil, email: nil, sso_auth_token: nil)
     frontend_url = ENV.fetch('FRONTEND_URL', nil)
