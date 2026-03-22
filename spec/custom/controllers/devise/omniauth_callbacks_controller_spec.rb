@@ -7,30 +7,44 @@ RSpec.describe 'Custom Ameide OIDC OmniAuth Callbacks', type: :request do
 
   def set_omniauth_config(email, roles = ['support-agent'])
     OmniAuth.config.test_mode = true
-    OmniAuth.config.mock_auth[:ameide_oidc] = OmniAuth::AuthHash.new(
+    OmniAuth.config.mock_auth[:ameide_oidc] = build_auth_hash(email, roles)
+  end
+
+  def build_auth_hash(email, roles)
+    OmniAuth::AuthHash.new(
       provider: 'ameide_oidc',
       uid: 'oidc-user-1',
-      info: {
-        name: 'Ameide Agent',
-        email: email,
-        first_name: 'Ameide',
-        last_name: 'Agent',
-        roles: roles
-      },
-      extra: {
-        raw_info: {
-          sub: 'oidc-user-1',
-          email: email,
-          realm_access: {
-            roles: roles
-          }
-        }
-      }
+      info: auth_info(email, roles),
+      extra: { raw_info: auth_raw_info(email, roles) }
     )
   end
 
+  def auth_info(email, roles)
+    {
+      name: 'Ameide Agent',
+      email: email,
+      first_name: 'Ameide',
+      last_name: 'Agent',
+      roles: roles
+    }
+  end
+
+  def auth_raw_info(email, roles)
+    {
+      sub: 'oidc-user-1',
+      email: email,
+      realm_access: {
+        roles: roles
+      }
+    }
+  end
+
   it 'creates a new ameide oidc user and redirects through the sso token flow' do
-    with_modified_env FRONTEND_URL: 'http://www.example.com', AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+    with_modified_env(
+      FRONTEND_URL: 'http://www.example.com',
+      AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent',
+      AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+    ) do
       set_omniauth_config(user_email)
 
       get '/omniauth/ameide_oidc/callback'
@@ -47,7 +61,11 @@ RSpec.describe 'Custom Ameide OIDC OmniAuth Callbacks', type: :request do
   end
 
   it 'rejects an unauthorized ameide oidc user' do
-    with_modified_env FRONTEND_URL: 'http://www.example.com', AMEIDE_OIDC_REQUIRED_ROLES: 'support-admin', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+    with_modified_env(
+      FRONTEND_URL: 'http://www.example.com',
+      AMEIDE_OIDC_REQUIRED_ROLES: 'support-admin',
+      AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+    ) do
       set_omniauth_config(user_email, ['support-agent'])
 
       get '/omniauth/ameide_oidc/callback'

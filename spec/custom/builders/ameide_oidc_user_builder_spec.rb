@@ -41,7 +41,11 @@ RSpec.describe AmeideOidcUserBuilder do
   end
 
   it 'maps configured admin roles to administrator' do
-    with_modified_env AMEIDE_OIDC_REQUIRED_ROLES: 'support-admin', AMEIDE_OIDC_ADMIN_ROLES: 'support-admin', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+    with_modified_env(
+      AMEIDE_OIDC_REQUIRED_ROLES: 'support-admin',
+      AMEIDE_OIDC_ADMIN_ROLES: 'support-admin',
+      AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+    ) do
       admin_hash = auth_hash.deep_dup
       admin_hash['extra']['raw_info']['realm_access']['roles'] = ['support-admin']
       admin_hash['info']['roles'] = ['support-admin']

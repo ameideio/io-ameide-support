@@ -74,13 +74,13 @@ class AmeideOidcUserBuilder
   def validate_required_roles!
     return if AmeideOidcConfig.required_roles.blank?
 
-    return if (roles & AmeideOidcConfig.required_roles).any?
+    return if roles.intersect?(AmeideOidcConfig.required_roles)
 
     raise AuthenticationFailed
   end
 
   def mapped_role
-    return 'administrator' if (roles & AmeideOidcConfig.admin_roles).any?
+    return 'administrator' if roles.intersect?(AmeideOidcConfig.admin_roles)
 
     AmeideOidcConfig.default_role
   end
