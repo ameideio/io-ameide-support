@@ -24,9 +24,9 @@ DeviseTokenAuth.setup do |config|
   # config.batch_request_buffer_throttle = 5.seconds
 
   # This route will be the prefix for all oauth2 redirect callbacks. For
-  # example, using the default '/omniauth', the github oauth2 provider will
-  # redirect successful authentications to '/omniauth/github/callback'
-  # config.omniauth_prefix = "/omniauth"
+  # Support uses a single built-in OIDC provider and exposes the request/callback
+  # phase directly on /auth, without the default /auth -> /omniauth redirect shim.
+  config.omniauth_prefix = '/auth'
 
   # By default sending current password is not needed for the password update.
   # Uncomment to enforce current_password param to be checked before all

@@ -30,18 +30,6 @@ describe('#validateRouteAccess', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  it('ignore session and continue to the page if the ignoreSession is present in route definition', () => {
-    validateRouteAccess(
-      {
-        name: 'login',
-        meta: { ignoreSession: true },
-      },
-      next
-    );
-    expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalledTimes(1);
-  });
-
   it('redirects to dashboard if auth cookie is present', () => {
     vi.spyOn(Cookies, 'get').mockReturnValueOnce(true);
 
@@ -57,16 +45,8 @@ describe('#validateRouteAccess', () => {
     expect(next).toHaveBeenCalledWith('/app/login');
   });
 
-  it('redirects to login if signup is disabled', () => {
-    validateRouteAccess({ meta: { requireSignupEnabled: true } }, next, {
-      signupEnabled: 'true',
-    });
-    expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalledWith('/app/login');
-  });
-
   it('continues to the route in every other case', () => {
-    validateRouteAccess({ name: 'reset_password' }, next);
+    validateRouteAccess({ name: 'login' }, next);
     expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith();
   });

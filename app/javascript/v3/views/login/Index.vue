@@ -11,15 +11,6 @@ import Spinner from 'shared/components/Spinner.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import MfaVerification from 'dashboard/components/auth/MfaVerification.vue';
 
-const ERROR_MESSAGES = {
-  'no-account-found': 'LOGIN.OAUTH.NO_ACCOUNT_FOUND',
-  'business-account-only': 'LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY',
-  'saml-authentication-failed': 'LOGIN.SAML.API.ERROR_MESSAGE',
-  'saml-not-enabled': 'LOGIN.SAML.API.ERROR_MESSAGE',
-  'ameide-oidc-authentication-failed': 'LOGIN.API.UNAUTH',
-  'ameide-oidc-access-denied': 'LOGIN.API.UNAUTH',
-};
-
 const IMPERSONATION_URL_SEARCH_KEY = 'impersonation';
 const SUPPORT_LOGIN_COPY = {
   heading: 'Continue to support',
@@ -75,10 +66,7 @@ export default {
       this.submitLogin();
     }
     if (this.authError) {
-      const messageKey = ERROR_MESSAGES[this.authError] ?? 'LOGIN.API.UNAUTH';
-      // Use a method to get the translated text to avoid dynamic key warning
-      const translatedMessage = this.getTranslatedMessage(messageKey);
-      useAlert(translatedMessage);
+      useAlert(this.$t('LOGIN.API.UNAUTH'));
       // wait for idle state
       this.requestIdleCallbackPolyfill(() => {
         // Remove the error query param from the url
@@ -108,18 +96,6 @@ export default {
 
       document.body.appendChild(form);
       form.submit();
-    },
-    getTranslatedMessage(key) {
-      // Avoid dynamic key warning by handling each case explicitly
-      switch (key) {
-        case 'LOGIN.OAUTH.NO_ACCOUNT_FOUND':
-          return this.$t('LOGIN.OAUTH.NO_ACCOUNT_FOUND');
-        case 'LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY':
-          return this.$t('LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY');
-        case 'LOGIN.API.UNAUTH':
-        default:
-          return this.$t('LOGIN.API.UNAUTH');
-      }
     },
     // TODO: Remove this when Safari gets wider support
     // Ref: https://caniuse.com/requestidlecallback

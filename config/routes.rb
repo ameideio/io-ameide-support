@@ -1,13 +1,14 @@
 Rails.application.routes.draw do
   # AUTH STARTS
   get 'auth/ameide_oidc/logout', to: 'custom/ameide_oidc_sessions#destroy'
+  match 'auth/ameide_oidc/callback', to: 'custom/ameide_oidc_callbacks#success', via: [:get, :post]
+  match 'auth/failure', to: 'custom/ameide_oidc_callbacks#failure', via: [:get, :post]
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
     passwords: 'devise_overrides/passwords',
     sessions: 'devise_overrides/sessions',
-    token_validations: 'devise_overrides/token_validations',
-    omniauth_callbacks: 'devise_overrides/omniauth_callbacks'
-  }, via: [:get, :post]
+    token_validations: 'devise_overrides/token_validations'
+  }, skip: [:registrations, :passwords, :confirmations, :omniauth_callbacks], via: [:get, :post]
 
   ## renders the frontend paths only if its not an api only server
   if ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false))

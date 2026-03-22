@@ -1,8 +1,4 @@
 module Custom::DashboardController
-  def index
-    super
-  end
-
   private
 
   def app_config
@@ -13,5 +9,9 @@ module Custom::DashboardController
 
   def allowed_login_methods
     ['ameide_oidc']
+  end
+
+  def sensitive_path?
+    false
   end
 end

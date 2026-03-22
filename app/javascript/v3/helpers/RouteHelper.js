@@ -11,15 +11,7 @@ const validateSSOLoginParams = to => {
   return isLoginRoute && hasValidSSOParams;
 };
 
-export const validateRouteAccess = (to, next, chatwootConfig = {}) => {
-  // Pages with ignoreSession:true would be rendered
-  // even if there is an active session
-  // Used for confirmation or password reset pages
-  if (to.meta && to.meta.ignoreSession) {
-    next();
-    return;
-  }
-
+export const validateRouteAccess = (to, next) => {
   if (validateSSOLoginParams(to)) {
     clearBrowserSessionCookies();
     next();
@@ -33,22 +25,7 @@ export const validateRouteAccess = (to, next, chatwootConfig = {}) => {
     return;
   }
 
-  // If the URL is an invalid path, redirect to login page
-  // Disable navigation to signup page if signups are disabled
-  // Signup route has an attribute (requireSignupEnabled) in it's definition
-  const isAnInalidSignupNavigation =
-    chatwootConfig.signupEnabled !== 'true' &&
-    to.meta &&
-    to.meta.requireSignupEnabled;
-
-  // Disable navigation to SAML login if enterprise is not enabled
-  // SAML route has an attribute (requireEnterprise) in it's definition
-  const isEnterpriseOnlyPath =
-    chatwootConfig.isEnterprise !== 'true' &&
-    to.meta &&
-    to.meta.requireEnterprise;
-
-  if (!to.name || isAnInalidSignupNavigation || isEnterpriseOnlyPath) {
+  if (!to.name) {
     next(frontendURL('login'));
     return;
   }

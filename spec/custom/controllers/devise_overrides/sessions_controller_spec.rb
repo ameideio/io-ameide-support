@@ -4,9 +4,17 @@ RSpec.describe 'Custom Ameide OIDC Session Protection', type: :request do
   let(:user_email) { "agent-#{SecureRandom.hex(4)}@ameide.io" }
   let!(:account) { create(:account, name: "Ameide OIDC #{SecureRandom.hex(4)}") }
   let!(:user) { create(:user, email: user_email, provider: 'ameide_oidc', password: 'Password1!', account: account) }
+  let!(:email_user) { create(:user, email: "email-#{SecureRandom.hex(4)}@ameide.io", provider: 'email', password: 'Password1!', account: account) }
 
   it 'blocks password login for ameide oidc users' do
     post new_user_session_url, params: { email: user.email, password: 'Password1!' }, as: :json
+
+    expect(response).to have_http_status(:unauthorized)
+    expect(response.parsed_body['errors']).to include('Use Ameide SSO to sign in.')
+  end
+
+  it 'blocks password login for non-oidc users as well' do
+    post new_user_session_url, params: { email: email_user.email, password: 'Password1!' }, as: :json
 
     expect(response).to have_http_status(:unauthorized)
     expect(response.parsed_body['errors']).to include('Use Ameide SSO to sign in.')
