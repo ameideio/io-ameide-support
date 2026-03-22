@@ -23,6 +23,8 @@ const ERROR_MESSAGES = {
   'business-account-only': 'LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY',
   'saml-authentication-failed': 'LOGIN.SAML.API.ERROR_MESSAGE',
   'saml-not-enabled': 'LOGIN.SAML.API.ERROR_MESSAGE',
+  'ameide-oidc-authentication-failed': 'LOGIN.API.UNAUTH',
+  'ameide-oidc-access-denied': 'LOGIN.API.UNAUTH',
 };
 
 const IMPERSONATION_URL_SEARCH_KEY = 'impersonation';
@@ -99,8 +101,18 @@ export default {
     showSamlLogin() {
       return this.allowedLoginMethods.includes('saml');
     },
+    showAmeideOidcLogin() {
+      return this.allowedLoginMethods.includes('ameide_oidc');
+    },
+    showPasswordLogin() {
+      return !this.showAmeideOidcLogin;
+    },
   },
   created() {
+    if (this.showAmeideOidcLogin && !this.ssoAuthToken && !this.authError) {
+      window.location = '/auth/ameide_oidc';
+      return;
+    }
     if (this.ssoAuthToken) {
       this.submitLogin();
     }
@@ -264,6 +276,20 @@ export default {
       }"
     >
       <div v-if="!email">
+        <div
+          v-if="showAmeideOidcLogin"
+          class="flex flex-col items-center justify-center gap-4 py-6"
+        >
+          <Spinner color-scheme="primary" size="" v-if="!authError" />
+          <NextButton
+            v-else
+            lg
+            class="w-full"
+            :label="'Continue with Ameide'"
+            @click="window.location = '/auth/ameide_oidc'"
+          />
+        </div>
+        <template v-else>
         <div class="flex flex-col gap-4">
           <GoogleOAuthButton v-if="showGoogleOAuth" />
           <div v-if="showSamlLogin" class="text-center">
@@ -332,6 +358,7 @@ export default {
             :is-loading="loginApi.showLoading"
           />
         </form>
+        </template>
       </div>
       <div v-else class="flex items-center justify-center">
         <Spinner color-scheme="primary" size="" />

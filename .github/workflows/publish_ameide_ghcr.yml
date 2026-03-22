@@ -1,0 +1,131 @@
+name: Publish Ameide Support image
+
+on:
+  push:
+    branches:
+      - develop
+      - feat/**
+      - fix/**
+      - chore/**
+    tags:
+      - v*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_REPO: ghcr.io/ameideio/io-ameide-support
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare
+        run: |
+          platform='${{ matrix.platform }}'
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+          cp docker/Dockerfile /tmp/io-ameide-support.Dockerfile
+          printf '\nENV CW_EDITION="ce"\n' >> /tmp/io-ameide-support.Dockerfile
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: /tmp/io-ameide-support.Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          outputs: type=image,name=${{ env.IMAGE_REPO }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest='${{ steps.build.outputs.digest }}'
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          GIT_REF: ${{ github.head_ref || github.ref_name }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          sanitized_ref="$(echo "$GIT_REF" | tr '/' '-')"
+          short_sha="$(printf '%s' "$GIT_SHA" | cut -c1-12)"
+          tags=(
+            "${IMAGE_REPO}:${sanitized_ref}-ce"
+            "${IMAGE_REPO}:sha-${short_sha}-ce"
+          )
+
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            tags+=("${IMAGE_REPO}:${GIT_REF}-ce")
+          fi
+
+          tag_args=()
+          for tag in "${tags[@]}"; do
+            tag_args+=("-t" "$tag")
+          done
+
+          docker buildx imagetools create "${tag_args[@]}" \
+            $(printf '${{ env.IMAGE_REPO }}@sha256:%s ' *)
+
+      - name: Inspect published image
+        env:
+          GIT_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          sanitized_ref="$(echo "$GIT_REF" | tr '/' '-')"
+          docker buildx imagetools inspect "${IMAGE_REPO}:${sanitized_ref}-ce"
