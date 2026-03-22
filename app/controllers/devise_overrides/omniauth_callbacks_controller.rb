@@ -63,6 +63,10 @@ class DeviseOverrides::OmniauthCallbacksController < DeviseTokenAuth::OmniauthCa
     @resource = resource_class.from_email(email)
   end
 
+  def auth_hash
+    super || request.env['omniauth.auth']
+  end
+
   def validate_signup_email_is_business_domain?
     # return true if the user is a business account, false if it is a blocked domain account
     Account::SignUpEmailValidationService.new(auth_hash['info']['email']).perform
