@@ -2,19 +2,32 @@ require 'rails_helper'
 
 describe '/app/login', type: :request do
   context 'without DEFAULT_LOCALE' do
-    it 'renders the dashboard' do
+    it 'redirects to ameide oidc' do
       get '/app/login'
-      expect(response).to have_http_status(:success)
+      expect(response).to redirect_to('/auth/ameide_oidc')
     end
   end
 
   context 'with DEFAULT_LOCALE' do
-    it 'renders the dashboard' do
+    it 'still redirects to ameide oidc' do
       with_modified_env DEFAULT_LOCALE: 'pt_BR' do
         get '/app/login'
-        expect(response).to have_http_status(:success)
-        expect(response.body).to include "selectedLocale: 'pt_BR'"
+        expect(response).to redirect_to('/auth/ameide_oidc')
       end
+    end
+  end
+
+  context 'with sso or error query parameters' do
+    it 'renders the dashboard shell for callback completion' do
+      get '/app/login', params: { email: 'agent@ameide.io', sso_auth_token: 'token' }
+
+      expect(response).to have_http_status(:success)
+    end
+
+    it 'renders the dashboard shell for auth errors' do
+      get '/app/login', params: { error: 'ameide-oidc-access-denied' }
+
+      expect(response).to have_http_status(:success)
     end
   end
 

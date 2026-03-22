@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   # AUTH STARTS
+  get 'auth/ameide_oidc/logout', to: 'custom/ameide_oidc_sessions#destroy'
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
     passwords: 'devise_overrides/passwords',
