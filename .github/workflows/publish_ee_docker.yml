@@ -26,8 +26,6 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
-          - platform: linux/arm64
-            runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     env:
       GIT_REF: ${{ github.head_ref || github.ref_name }}
@@ -52,9 +50,6 @@ jobs:
           else
             echo "DOCKER_TAG=${DOCKER_REPO}:${SANITIZED_REF}" >> $GITHUB_ENV
           fi
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
