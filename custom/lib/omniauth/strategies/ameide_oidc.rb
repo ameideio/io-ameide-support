@@ -69,3 +69,9 @@ class OmniAuth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
     discovery_document.fetch('userinfo_endpoint')
   end
 end
+
+module Omniauth
+  module Strategies
+    AmeideOidc = ::OmniAuth::Strategies::AmeideOidc
+  end
+end
