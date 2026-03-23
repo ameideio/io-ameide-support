@@ -18,14 +18,40 @@ describe('#actions', () => {
       vi.clearAllMocks();
     });
 
-    it('returns cached data if available', async () => {
+    it('hydrates from cache and then refreshes from the API', async () => {
+      const freshAgents = [agents[0]];
       getFromCache.mockReturnValue(agents);
+      getAvailableAgents.mockReturnValue({ data: { payload: freshAgents } });
+
       await actions.fetchAvailableAgents({ commit }, websiteToken);
 
       expect(getFromCache).toHaveBeenCalledWith(
         `chatwoot_available_agents_${websiteToken}`
       );
-      expect(getAvailableAgents).not.toHaveBeenCalled();
+      expect(getAvailableAgents).toHaveBeenCalledWith(websiteToken);
+      expect(setCache).toHaveBeenCalledWith(
+        `chatwoot_available_agents_${websiteToken}`,
+        freshAgents
+      );
+      expect(commit).toHaveBeenNthCalledWith(1, 'setAgents', agents);
+      expect(commit).toHaveBeenNthCalledWith(2, 'setError', false);
+      expect(commit).toHaveBeenNthCalledWith(3, 'setAgents', freshAgents);
+      expect(commit).toHaveBeenNthCalledWith(4, 'setError', false);
+      expect(commit).toHaveBeenNthCalledWith(5, 'setHasFetched', true);
+    });
+
+    it('keeps cached data when the refresh request fails', async () => {
+      getFromCache.mockReturnValue(agents);
+      getAvailableAgents.mockRejectedValue({
+        message: 'Authentication required',
+      });
+
+      await actions.fetchAvailableAgents({ commit }, websiteToken);
+
+      expect(getFromCache).toHaveBeenCalledWith(
+        `chatwoot_available_agents_${websiteToken}`
+      );
+      expect(getAvailableAgents).toHaveBeenCalledWith(websiteToken);
       expect(setCache).not.toHaveBeenCalled();
       expect(commit).toHaveBeenCalledWith('setAgents', agents);
       expect(commit).toHaveBeenCalledWith('setError', false);
