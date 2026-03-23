@@ -43,6 +43,15 @@ class AmeideOidcUserBuilder
   def add_user_to_account
     account_user = AccountUser.find_or_create_by!(user: @user, account: target_account)
     account_user.update!(role: mapped_role) if account_user.role != mapped_role
+    sync_user_inbox_memberships!
+  end
+
+  def sync_user_inbox_memberships!
+    target_account.inboxes.find_each do |inbox|
+      next if inbox.inbox_members.exists?(user_id: @user.id)
+
+      inbox.add_members([@user.id])
+    end
   end
 
   def user_can_join_target_account?(user)

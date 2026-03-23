@@ -56,6 +56,21 @@ RSpec.describe AmeideOidcUserBuilder do
     end
   end
 
+  it 'adds the authenticated user to every existing inbox in the target account' do
+    with_modified_env AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+      primary_inbox = create(:channel_widget, account: account).inbox
+      secondary_inbox = create(:channel_widget, account: account).inbox
+
+      user = described_class.new(auth_hash).perform
+
+      expect(primary_inbox.reload.members).to include(user)
+      expect(secondary_inbox.reload.members).to include(user)
+      expect do
+        described_class.new(auth_hash).perform
+      end.not_to change(InboxMember, :count)
+    end
+  end
+
   it 'rejects users outside the allowed email domains' do
     with_modified_env AMEIDE_OIDC_ALLOWED_EMAIL_DOMAINS: 'ameide.io', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
       denied_hash = auth_hash.deep_dup
