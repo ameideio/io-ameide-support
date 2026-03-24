@@ -108,6 +108,16 @@ jobs:
             "${IMAGE_REPO}:sha-${short_sha}-ce"
           )
 
+          # Kargo (Digest strategy) expects a stable, mutable channel tag (e.g., `main`) that
+          # resolves to the latest desired revision. This repo's default branch is `develop`,
+          # so we additionally publish `:main` tags on `develop` builds.
+          if [ "${sanitized_ref}" = "develop" ]; then
+            tags+=(
+              "${IMAGE_REPO}:main"
+              "${IMAGE_REPO}:main-${short_sha}"
+            )
+          fi
+
           if [ "${{ github.ref_type }}" = "tag" ]; then
             tags+=("${IMAGE_REPO}:${GIT_REF}-ce")
           fi
