@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   # via GET, which OmniAuth will ignore and fall through to a 404. This route
   # renders a minimal auto-submitting POST form so the request phase continues
   # to use the vendor-recommended POST flow with CSRF protection.
-  get '/omniauth/:provider', to: 'omniauth_passthru#show', constraints: { provider: /(?!failure$)[^\/]+/ }
+  get '/omniauth/:provider', to: 'omniauth_passthru#show', constraints: { provider: %r{\A(?!failure\z)[^/]+\z} }
 
   # AUTH STARTS
   get 'auth/ameide_oidc/logout', to: 'custom/ameide_oidc_sessions#destroy'

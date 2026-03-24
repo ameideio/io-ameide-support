@@ -2,9 +2,9 @@ require 'json'
 require 'net/http'
 require 'omniauth-oauth2'
 
-module Omniauth::Strategies; end
+module OmniAuth::Strategies; end
 
-class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
+class OmniAuth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
   option :name, :ameide_oidc
   option :issuer_url, nil
   option :scope, 'openid email profile'
@@ -71,5 +71,3 @@ class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
     discovery_document.fetch('userinfo_endpoint')
   end
 end
-
-OmniAuth::Strategies.const_set(:AmeideOidc, Omniauth::Strategies::AmeideOidc) unless OmniAuth::Strategies.const_defined?(:AmeideOidc, false)
