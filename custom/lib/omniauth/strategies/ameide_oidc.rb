@@ -2,10 +2,7 @@ require 'json'
 require 'net/http'
 require 'omniauth-oauth2'
 
-module Omniauth
-  module Strategies
-  end
-end
+module Omniauth::Strategies; end
 
 class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
   option :name, :ameide_oidc
