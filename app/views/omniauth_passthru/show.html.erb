@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting…</title>
+    <%= csrf_meta_tags %>
+  </head>
+  <body>
+    <%= form_with url: request.path, method: :post, local: true do %>
+      <% request.query_parameters.each do |key, value| %>
+        <%= hidden_field_tag key, value %>
+      <% end %>
+      <noscript>
+        <button type="submit">Continue</button>
+      </noscript>
+    <% end %>
+
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+

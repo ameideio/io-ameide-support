@@ -1,4 +1,11 @@
 Rails.application.routes.draw do
+  # OmniAuth 2.x defaults to POST-only for the request phase. Some entrypoints
+  # (including legacy bookmarks and external links) still hit `/omniauth/:provider`
+  # via GET, which OmniAuth will ignore and fall through to a 404. This route
+  # renders a minimal auto-submitting POST form so the request phase continues
+  # to use the vendor-recommended POST flow with CSRF protection.
+  get '/omniauth/:provider', to: 'omniauth_passthru#show', constraints: { provider: /(?!failure$)[^\/]+/ }
+
   # AUTH STARTS
   get 'auth/ameide_oidc/logout', to: 'custom/ameide_oidc_sessions#destroy'
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
