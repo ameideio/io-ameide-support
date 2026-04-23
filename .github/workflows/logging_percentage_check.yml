@@ -6,6 +6,9 @@ on:
       - develop
 
 # If two pushes happen within a short time in the same PR, cancel the run of the oldest push
+permissions:
+  contents: read
+
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
@@ -16,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Check for log lines and calculate percentage
         run: |
