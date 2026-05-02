@@ -52,27 +52,34 @@ export default {
       },
       mfaRequired: false,
       mfaToken: null,
+      resolvedSsoAuthToken: '',
     };
   },
   computed: {
     ...mapGetters({ globalConfig: 'globalConfig/get' }),
+    effectiveSsoAuthToken() {
+      return this.ssoAuthToken || this.resolvedSsoAuthToken;
+    },
     redirectingToOidc() {
-      return !this.ssoAuthToken && !this.authError;
+      return !this.effectiveSsoAuthToken && !this.authError && !this.email;
     },
     isCompletingLogin() {
-      return Boolean(this.ssoAuthToken);
+      return Boolean(this.effectiveSsoAuthToken);
     },
     supportLoginCopy() {
       return SUPPORT_LOGIN_COPY;
     },
   },
   created() {
-    if (this.redirectingToOidc) {
-      window.location = '/auth/ameide_oidc';
-      return;
-    }
     if (this.ssoAuthToken) {
       this.submitLogin();
+    } else if (this.email && !this.authError) {
+      // SSO callback redirected here with the token stored in an HttpOnly cookie.
+      // Exchange the cookie for the token before submitting.
+      this.exchangeCookieForSsoToken();
+    } else if (!this.authError) {
+      window.location = '/auth/ameide_oidc';
+      return;
     }
     if (this.authError) {
       const messageKey = ERROR_MESSAGES[this.authError] ?? 'LOGIN.API.UNAUTH';
@@ -127,6 +134,27 @@ export default {
         SessionStorage.set(SESSION_STORAGE_KEYS.IMPERSONATION_USER, true);
       }
     },
+    async exchangeCookieForSsoToken() {
+      try {
+        const response = await fetch('/auth/sso/exchange', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+        if (!response.ok || response.status === 204) {
+          window.location = '/auth/ameide_oidc';
+          return;
+        }
+        const data = await response.json();
+        if (data?.sso_auth_token) {
+          this.resolvedSsoAuthToken = data.sso_auth_token;
+          this.submitLogin();
+        } else {
+          window.location = '/auth/ameide_oidc';
+        }
+      } catch (error) {
+        window.location = '/auth/ameide_oidc';
+      }
+    },
     submitLogin() {
       this.loginApi.hasErrored = false;
       this.loginApi.showLoading = true;
@@ -134,7 +162,7 @@ export default {
       const credentials = {
         email: this.email ? decodeURIComponent(this.email) : '',
         password: '',
-        sso_auth_token: this.ssoAuthToken,
+        sso_auth_token: this.effectiveSsoAuthToken,
         ssoAccountId: this.ssoAccountId,
         ssoConversationId: this.ssoConversationId,
       };

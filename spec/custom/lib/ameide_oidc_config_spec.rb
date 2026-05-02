@@ -17,6 +17,40 @@ RSpec.describe AmeideOidcConfig do
     end
   end
 
+  describe '.require_email_verified?' do
+    it 'defaults to true' do
+      with_modified_env AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED: nil do
+        expect(described_class.require_email_verified?).to be(true)
+      end
+    end
+
+    it 'is false when explicitly disabled' do
+      with_modified_env AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED: 'false' do
+        expect(described_class.require_email_verified?).to be(false)
+      end
+    end
+  end
+
+  describe '.prompt' do
+    it 'defaults to "login" so an active IdP session never silently signs the user in' do
+      with_modified_env AMEIDE_OIDC_PROMPT: nil do
+        expect(described_class.prompt).to eq('login')
+      end
+    end
+
+    it 'returns nil when set to a falsey value' do
+      with_modified_env AMEIDE_OIDC_PROMPT: 'false' do
+        expect(described_class.prompt).to be_nil
+      end
+    end
+
+    it 'returns the configured value when explicitly set' do
+      with_modified_env AMEIDE_OIDC_PROMPT: 'consent' do
+        expect(described_class.prompt).to eq('consent')
+      end
+    end
+  end
+
   describe '.logout_redirect_link' do
     it 'builds a keycloak logout url with the configured client and redirect uri' do
       with_modified_env \

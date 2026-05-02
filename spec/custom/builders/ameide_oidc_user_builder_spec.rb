@@ -19,6 +19,7 @@ RSpec.describe AmeideOidcUserBuilder do
         raw_info: {
           sub: 'oidc-user-1',
           email: user_email,
+          email_verified: true,
           given_name: 'Ameide',
           family_name: 'Agent',
           realm_access: {
@@ -65,6 +66,58 @@ RSpec.describe AmeideOidcUserBuilder do
       expect do
         described_class.new(denied_hash).perform
       end.to raise_error(AmeideOidcUserBuilder::AuthenticationFailed)
+    end
+  end
+
+  describe 'email_verified enforcement' do
+    it 'rejects unverified emails when AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED defaults to true' do
+      with_modified_env AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+        unverified = auth_hash.deep_dup
+        unverified['extra']['raw_info']['email_verified'] = false
+
+        expect do
+          described_class.new(unverified).perform
+        end.to raise_error(AmeideOidcUserBuilder::AuthenticationFailed)
+      end
+    end
+
+    it 'rejects when email_verified claim is missing' do
+      with_modified_env AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent', AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name do
+        missing = auth_hash.deep_dup
+        missing['extra']['raw_info'].delete('email_verified')
+
+        expect do
+          described_class.new(missing).perform
+        end.to raise_error(AmeideOidcUserBuilder::AuthenticationFailed)
+      end
+    end
+
+    it 'accepts verified emails when AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED is true' do
+      with_modified_env(
+        AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent',
+        AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED: 'true',
+        AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+      ) do
+        verified = auth_hash.deep_dup
+        verified['extra']['raw_info']['email_verified'] = true
+
+        user = described_class.new(verified).perform
+        expect(user).to be_persisted
+      end
+    end
+
+    it 'accepts unverified emails when AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED is false' do
+      with_modified_env(
+        AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent',
+        AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED: 'false',
+        AMEIDE_CHATWOOT_ACCOUNT_NAME: account_name
+      ) do
+        unverified = auth_hash.deep_dup
+        unverified['extra']['raw_info']['email_verified'] = false
+
+        user = described_class.new(unverified).perform
+        expect(user).to be_persisted
+      end
     end
   end
 end
