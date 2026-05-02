@@ -3,4 +3,3 @@ class OmniauthPassthruController < ApplicationController
     render :show, layout: false
   end
 end
-

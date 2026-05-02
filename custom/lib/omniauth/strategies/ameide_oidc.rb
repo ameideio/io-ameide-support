@@ -2,7 +2,17 @@ require 'json'
 require 'net/http'
 require 'omniauth-oauth2'
 
-module Omniauth::Strategies; end
+# Eager-load (`assets:precompile`) requires the parent `Omniauth` constant to
+# exist before declaring `Omniauth::Strategies`. The compact form
+# `module Omniauth::Strategies; end` raises `NameError: uninitialized constant
+# Omniauth` because the OmniAuth gem defines `OmniAuth` (camelCase), not
+# `Omniauth`. Define both rungs explicitly. The const_set at the bottom
+# bridges this Zeitwerk-friendly namespace into the real OmniAuth strategy
+# registry.
+module Omniauth # rubocop:disable Style/ClassAndModuleChildren
+  module Strategies
+  end
+end
 
 class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
   option :name, :ameide_oidc
