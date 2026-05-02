@@ -190,9 +190,13 @@ jobs:
         run: |
           set -euo pipefail
           # Pin to immutable digest to ensure the SBOM is bound to exactly this build.
+          # cosign 2.x rejects --type spdxjson; valid values are
+          # spdx|cyclonedx|syft. anchore/sbom-action emits SPDX-JSON,
+          # which is fine — `--type spdx` declares the format and the
+          # JSON encoding is detected automatically.
           cosign attach sbom \
             --sbom "${SBOM_PATH}" \
-            --type spdxjson \
+            --type spdx \
             "${IMAGE_REPO}@${MANIFEST_DIGEST}"
 
       - name: Generate SLSA build-provenance attestation (manifest list)
