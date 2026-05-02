@@ -76,3 +76,11 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# executed weekly on Sunday at 0300 UTC
+# prunes Audited::Audit rows older than the retention window
+# (AmeideOidcConfig.audit_retention_days || ENV['AMEIDE_AUDIT_RETENTION_DAYS'] || 365 days)
+audit_prune_job:
+  cron: '0 3 * * 0'
+  class: 'Internal::AuditPruneJob'
+  queue: scheduled_jobs

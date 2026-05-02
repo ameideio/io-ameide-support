@@ -1,4 +1,19 @@
-if ActiveModel::Type::Boolean.new.cast(ENV.fetch('LOGRAGE_ENABLED', false)).present?
+# Configures Rails request logging.
+#
+# `LOG_FORMAT` selects the on-the-wire log shape (default `json` in production,
+# `text` elsewhere). When set to `json`, Lograge emits one JSON line per
+# request, which is what the Pino->Loki pipeline downstream expects.
+#
+# Legacy `LOGRAGE_ENABLED=true` is still honored for backwards compatibility:
+# if it is truthy, Lograge is enabled regardless of LOG_FORMAT.
+#
+# Sidekiq's logger is intentionally untouched here.
+
+default_format = Rails.env.production? ? 'json' : 'text'
+log_format = ENV.fetch('LOG_FORMAT', default_format).to_s.downcase
+legacy_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('LOGRAGE_ENABLED', false))
+
+if log_format == 'json' || legacy_enabled.present?
   require 'lograge'
 
   Rails.application.configure do

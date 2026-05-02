@@ -14,6 +14,8 @@ on:
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 env:
   IMAGE_REPO: ghcr.io/ameideio/io-ameide-support
@@ -27,6 +29,11 @@ jobs:
           - platform: linux/amd64
             runner: ubuntu-latest
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -60,6 +67,13 @@ jobs:
           push: true
           outputs: type=image,name=${{ env.IMAGE_REPO }},push-by-digest=true,name-canonical=true,push=true
 
+      - name: Generate SLSA build-provenance attestation (per-platform digest)
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
       - name: Export digest
         run: |
           mkdir -p "${{ runner.temp }}/digests"
@@ -77,6 +91,14 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      manifest_digest: ${{ steps.manifest.outputs.digest }}
+      primary_tag: ${{ steps.manifest.outputs.primary_tag }}
     steps:
       - name: Download digests
         uses: actions/download-artifact@v8.0.1
@@ -96,6 +118,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Create manifest list and push
+        id: manifest
         working-directory: ${{ runner.temp }}/digests
         env:
           GIT_REF: ${{ github.head_ref || github.ref_name }}
@@ -103,8 +126,9 @@ jobs:
         run: |
           sanitized_ref="$(echo "$GIT_REF" | tr '/' '-')"
           short_sha="$(printf '%s' "$GIT_SHA" | cut -c1-12)"
+          primary_tag="${IMAGE_REPO}:${sanitized_ref}-ce"
           tags=(
-            "${IMAGE_REPO}:${sanitized_ref}-ce"
+            "${primary_tag}"
             "${IMAGE_REPO}:sha-${short_sha}-ce"
           )
 
@@ -130,9 +154,50 @@ jobs:
           docker buildx imagetools create "${tag_args[@]}" \
             $(printf '${{ env.IMAGE_REPO }}@sha256:%s ' *)
 
+          # Resolve the digest of the freshly-pushed manifest list so downstream
+          # steps (SBOM, attestation) can pin to it.
+          manifest_digest="$(docker buildx imagetools inspect "${primary_tag}" --raw | sha256sum | awk '{print "sha256:"$1}')"
+          # Prefer registry-reported digest when available.
+          if registry_digest="$(docker buildx imagetools inspect "${primary_tag}" --format '{{ json .Manifest }}' | jq -r '.digest')" && [ -n "$registry_digest" ] && [ "$registry_digest" != "null" ]; then
+            manifest_digest="$registry_digest"
+          fi
+          echo "digest=${manifest_digest}" >> "$GITHUB_OUTPUT"
+          echo "primary_tag=${primary_tag}" >> "$GITHUB_OUTPUT"
+
       - name: Inspect published image
         env:
-          GIT_REF: ${{ github.head_ref || github.ref_name }}
+          PRIMARY_TAG: ${{ steps.manifest.outputs.primary_tag }}
+        run: docker buildx imagetools inspect "${PRIMARY_TAG}"
+
+      - name: Generate SBOM (SPDX JSON) for published image
+        id: sbom
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.manifest.outputs.primary_tag }}
+          format: spdx-json
+          output-file: ${{ runner.temp }}/sbom.spdx.json
+          upload-artifact: true
+          upload-artifact-retention: 30
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Attach SBOM as OCI sidecar artifact
+        env:
+          PRIMARY_TAG: ${{ steps.manifest.outputs.primary_tag }}
+          MANIFEST_DIGEST: ${{ steps.manifest.outputs.digest }}
+          SBOM_PATH: ${{ runner.temp }}/sbom.spdx.json
         run: |
-          sanitized_ref="$(echo "$GIT_REF" | tr '/' '-')"
-          docker buildx imagetools inspect "${IMAGE_REPO}:${sanitized_ref}-ce"
+          set -euo pipefail
+          # Pin to immutable digest to ensure the SBOM is bound to exactly this build.
+          cosign attach sbom \
+            --sbom "${SBOM_PATH}" \
+            --type spdxjson \
+            "${IMAGE_REPO}@${MANIFEST_DIGEST}"
+
+      - name: Generate SLSA build-provenance attestation (manifest list)
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true
