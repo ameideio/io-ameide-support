@@ -71,6 +71,14 @@ module AmeideOidcConfig
     "#{issuer_url}/protocol/openid-connect/logout"
   end
 
+  def jwks_uri
+    endpoint = ENV.fetch('AMEIDE_OIDC_JWKS_URI', nil)
+    return endpoint if endpoint.present?
+    return if issuer_url.blank?
+
+    "#{issuer_url}/protocol/openid-connect/certs"
+  end
+
   def logout_redirect_link
     endpoint = end_session_endpoint
     return ENV.fetch('LOGOUT_REDIRECT_LINK', '/') if endpoint.blank?

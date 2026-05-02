@@ -11,6 +11,13 @@ Rails.application.routes.draw do
   # Same-origin endpoint that exchanges the HttpOnly cookie set during SSO sign-in
   # for the underlying `sso_auth_token` (consumed exactly once by the SPA).
   post 'auth/sso/exchange', to: 'sso_token_exchange#create'
+  # OIDC backchannel logout (RFC 8414/OIDC-Backchannel-Logout 1.0). Keycloak
+  # POSTs a signed `logout_token` here when an SSO session ends so we can
+  # invalidate active Chatwoot sessions immediately rather than waiting for
+  # the Devise session timeout.
+  post 'auth/ameide_oidc/backchannel-logout',
+       to: 'custom/ameide_oidc_backchannel_logouts#create',
+       as: 'ameide_oidc_backchannel_logout'
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
     passwords: 'devise_overrides/passwords',

@@ -164,7 +164,10 @@ Devise.setup do |config|
   # ==> Configuration for :timeoutable
   # The time you want to timeout the user session without activity. After this
   # time the user will be asked for credentials again. Default is 30 minutes.
-  # config.timeout_in = 30.minutes
+  # Ameide override: tunable per env via AMEIDE_DEVISE_TIMEOUT_MINUTES so SSO
+  # offboarding (account disabled / role removed in Keycloak) takes effect on
+  # the next re-sign-in instead of waiting out the full Devise session lifetime.
+  config.timeout_in = Integer(ENV.fetch('AMEIDE_DEVISE_TIMEOUT_MINUTES', 30)).minutes
 
   # ==> Configuration for :lockable
   # Defines which strategy will be used to lock an account.
