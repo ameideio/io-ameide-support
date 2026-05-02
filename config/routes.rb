@@ -8,6 +8,9 @@ Rails.application.routes.draw do
 
   # AUTH STARTS
   get 'auth/ameide_oidc/logout', to: 'custom/ameide_oidc_sessions#destroy'
+  # Same-origin endpoint that exchanges the HttpOnly cookie set during SSO sign-in
+  # for the underlying `sso_auth_token` (consumed exactly once by the SPA).
+  post 'auth/sso/exchange', to: 'sso_token_exchange#create'
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
     passwords: 'devise_overrides/passwords',

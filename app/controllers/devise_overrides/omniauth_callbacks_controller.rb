@@ -12,11 +12,25 @@ class DeviseOverrides::OmniauthCallbacksController < DeviseTokenAuth::OmniauthCa
   def sign_in_user
     @resource.skip_confirmation! if confirmable_enabled?
 
-    # once the resource is found and verified
-    # we can just send them to the login page again with the SSO params
-    # that will log them in
+    # once the resource is found and verified, send the SSO token through an
+    # HttpOnly + Secure + SameSite=Lax cookie scoped to the login path instead
+    # of a query parameter (which leaks via Referer / browser history / logs).
+    # The SPA exchanges the cookie for the token via the dedicated endpoint
+    # below before submitting to /auth/sign_in.
     encoded_email = ERB::Util.url_encode(@resource.email)
-    redirect_to login_page_url(email: encoded_email, sso_auth_token: @resource.generate_sso_auth_token)
+    write_sso_auth_token_cookie(@resource.generate_sso_auth_token)
+    redirect_to login_page_url(email: encoded_email)
+  end
+
+  def write_sso_auth_token_cookie(token)
+    cookies[:sso_auth_token] = {
+      value: token,
+      path: '/app/login',
+      httponly: true,
+      secure: ::Rails.env.production?,
+      same_site: :lax,
+      expires: 5.minutes.from_now
+    }
   end
 
   def sign_in_user_on_mobile

@@ -27,6 +27,18 @@ module AmeideOidcConfig
     ENV.fetch('AMEIDE_OIDC_SCOPE', 'openid email profile')
   end
 
+  def require_email_verified?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('AMEIDE_OIDC_REQUIRE_EMAIL_VERIFIED', 'true'))
+  end
+
+  def prompt
+    value = ENV.fetch('AMEIDE_OIDC_PROMPT', 'login').to_s
+    return nil if value.blank?
+    return nil if %w[false 0 no off].include?(value.downcase)
+
+    value
+  end
+
   def default_role
     ENV.fetch('AMEIDE_OIDC_DEFAULT_ACCOUNT_ROLE', 'agent')
   end

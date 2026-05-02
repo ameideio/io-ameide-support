@@ -33,13 +33,14 @@ RSpec.describe 'Custom Ameide OIDC OmniAuth Callbacks', type: :request do
     {
       sub: 'oidc-user-1',
       email: email,
+      email_verified: true,
       realm_access: {
         roles: roles
       }
     }
   end
 
-  it 'creates a new ameide oidc user and redirects through the sso token flow' do
+  it 'creates a new ameide oidc user and redirects through the sso token flow', :aggregate_failures do
     with_modified_env(
       FRONTEND_URL: 'http://www.example.com',
       AMEIDE_OIDC_REQUIRED_ROLES: 'support-agent',
@@ -51,7 +52,11 @@ RSpec.describe 'Custom Ameide OIDC OmniAuth Callbacks', type: :request do
 
       expect(response).to redirect_to('http://www.example.com/auth/ameide_oidc/callback')
       follow_redirect!
-      expect(response).to redirect_to(%r{/app/login\?email=.+&sso_auth_token=.+$})
+      expect(response).to redirect_to(%r{/app/login\?email=[^&]+$})
+      expect(response.headers['Set-Cookie']).to match(/sso_auth_token=/)
+      expect(response.headers['Set-Cookie']).to match(%r{path=/app/login}i)
+      expect(response.headers['Set-Cookie']).to match(/HttpOnly/i)
+      expect(response.headers['Set-Cookie']).to match(/SameSite=Lax/i)
 
       user = User.from_email(user_email)
       expect(user).to be_present

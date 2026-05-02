@@ -59,8 +59,18 @@ class AmeideOidcUserBuilder
   end
 
   def validate_authorization!
+    validate_email_verified!
     validate_email_domain!
     validate_required_roles!
+  end
+
+  def validate_email_verified!
+    return unless AmeideOidcConfig.require_email_verified?
+
+    verified = @auth_hash.dig('extra', 'raw_info', 'email_verified')
+    return if verified == true
+
+    raise AuthenticationFailed, I18n.t('errors.signup.invalid')
   end
 
   def validate_email_domain!
