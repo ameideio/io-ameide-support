@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":semanticCommitTypeAll(chore)",
+    ":timezone(Etc/UTC)"
+  ],
+  "baseBranches": ["develop"],
+  "labels": ["dependencies", "renovate"],
+  "rangeStrategy": "bump",
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "schedule": [
+    "before 6am on Monday"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on Monday"]
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "description": "Pin Ruby version updates separately so they go through their own review",
+      "matchManagers": ["ruby-version", "bundler"],
+      "matchPackageNames": ["ruby"],
+      "groupName": "ruby version",
+      "schedule": ["before 6am on the first day of the month"]
+    },
+    {
+      "description": "Bundler self-updates land separately from Gem dependencies",
+      "matchManagers": ["bundler"],
+      "matchPackageNames": ["bundler"],
+      "groupName": "bundler",
+      "schedule": ["before 6am on the first day of the month"]
+    },
+    {
+      "description": "Group Bundler gem dependency updates (excluding ruby/bundler themselves)",
+      "matchManagers": ["bundler"],
+      "excludePackageNames": ["ruby", "bundler"],
+      "groupName": "bundler dependencies",
+      "schedule": ["before 6am on the first day of the month"]
+    },
+    {
+      "description": "Track upstream Chatwoot tag for monthly merge proposal",
+      "matchManagers": ["regex"],
+      "matchDepNames": ["chatwoot/chatwoot"],
+      "groupName": "upstream chatwoot",
+      "schedule": ["before 6am on the first day of the month"],
+      "labels": ["upstream-chatwoot", "needs-review"]
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ],
+  "regexManagers": [
+    {
+      "description": "Track the upstream Chatwoot release tag pinned in VERSION_CW. Renovate opens a PR when chatwoot/chatwoot ships a new tag.",
+      "fileMatch": ["(^|/)VERSION_CW$"],
+      "matchStrings": [
+        "^(?<currentValue>v?\\d+\\.\\d+\\.\\d+(?:[-.][^\\s]+)?)\\s*$"
+      ],
+      "depNameTemplate": "chatwoot/chatwoot",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver-coerced"
+    }
+  ]
+}
