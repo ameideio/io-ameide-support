@@ -14,7 +14,7 @@ module Omniauth # rubocop:disable Style/ClassAndModuleChildren
   end
 end
 
-class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2 # rubocop:disable Style/ClassAndModuleChildren
+class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2
   option :name, :ameide_oidc
   option :issuer_url, nil
   option :scope, 'openid email profile'
@@ -82,6 +82,4 @@ class Omniauth::Strategies::AmeideOidc < OmniAuth::Strategies::OAuth2 # rubocop:
   end
 end
 
-unless OmniAuth::Strategies.const_defined?(:AmeideOidc, false)
-  OmniAuth::Strategies.const_set(:AmeideOidc, Omniauth::Strategies::AmeideOidc)
-end
+OmniAuth::Strategies.const_set(:AmeideOidc, Omniauth::Strategies::AmeideOidc) unless OmniAuth::Strategies.const_defined?(:AmeideOidc, false)
