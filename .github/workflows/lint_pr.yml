@@ -16,7 +16,7 @@ permissions:
 jobs:
   main:
     name: Validate PR title
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
       - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825  # v5
         env:

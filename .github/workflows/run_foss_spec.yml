@@ -12,7 +12,7 @@ on:
 jobs:
   # Separate linting jobs for faster feedback
   lint-backend:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: ruby/setup-ruby@0cb964fd540e0a24c900370abf38a33466142735  # v1
@@ -22,7 +22,7 @@ jobs:
         run: bundle exec rubocop --parallel
 
   lint-frontend:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
@@ -37,7 +37,7 @@ jobs:
 
   # Frontend tests run in parallel with backend
   frontend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
@@ -52,7 +52,7 @@ jobs:
 
   # Backend tests with parallelization
   backend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     strategy:
       fail-fast: false
       matrix:
