@@ -15,8 +15,7 @@ concurrency:
 
 jobs:
   log_lines_check:
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2

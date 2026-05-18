@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   nightly:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
     steps:
 
     - name: Prepare checked-in installer
