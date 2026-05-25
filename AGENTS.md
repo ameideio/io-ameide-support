@@ -19,6 +19,15 @@
 - **rbenv setup**: Before running any `bundle` or `rspec` commands, init rbenv in your shell (`eval "$(rbenv init -)"`) so the correct Ruby/Bundler versions are used
 - Always prefer `bundle exec` for Ruby CLI tasks (rspec, rake, rubocop, etc.)
 
+## Coordinated release instructions
+
+- Do not finish at this repository's PR. Identify all affected repositories and own the coordinated change through merge.
+- Author or update `ameide-e2e` coverage when the change affects user-visible behavior, API behavior, authorization, routing, persistence, lifecycle behavior, or release evidence. If no e2e change is needed, state why existing coverage is sufficient.
+- After all required source and e2e PRs merge, confirm CI published immutable image digests for every changed artifact.
+- Confirm Kargo discovered Freight containing the intended coordinated artifact set; do not select Freight only because it is newest.
+- Select/request the intended Freight through Kargo. Do not hand-edit GitOps image pins.
+- Verify Argo CD reconciliation, Keptn lifecycle status, and Keptn-triggered Testkube evidence after promotion. Local tests, source CI, and ad hoc Testkube runs are diagnostics only.
+
 ## Code Style
 
 - **Ruby**: Follow RuboCop rules (150 character max line length)
