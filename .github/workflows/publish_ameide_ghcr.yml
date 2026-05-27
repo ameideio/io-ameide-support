@@ -89,7 +89,7 @@ jobs:
           retention-days: 1
 
   merge:
-    runs-on: ${{ vars.AMEIDE_RUNS_ON }}
+    runs-on: ${{ vars.AMEIDE_DIND_RUNS_ON }}
     needs: build
     permissions:
       contents: read
