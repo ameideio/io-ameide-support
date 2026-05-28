@@ -11,8 +11,9 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
 
   # Config related to smtp
+  smtp_address = Rails.env.test? ? ENV.fetch('SMTP_ADDRESS', 'localhost') : ENV.fetch('SMTP_ADDRESS')
   smtp_settings = {
-    address: ENV.fetch('SMTP_ADDRESS', 'localhost'),
+    address: smtp_address,
     port: ENV.fetch('SMTP_PORT', 587)
   }
 
@@ -29,9 +30,6 @@ Rails.application.configure do
 
   config.action_mailer.delivery_method = :smtp unless Rails.env.test?
   config.action_mailer.smtp_settings = smtp_settings
-
-  # Use sendmail if using postfix for email
-  config.action_mailer.delivery_method = :sendmail if ENV['SMTP_ADDRESS'].blank?
 
   # You can use letter opener for your local development by setting the environment variable
   config.action_mailer.delivery_method = :letter_opener if Rails.env.development? && ENV['LETTER_OPENER']

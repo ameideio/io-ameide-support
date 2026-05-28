@@ -15,7 +15,7 @@
 # 'cache' namespace so we don't collide with the alfred / velma / thelma
 # namespaces.
 Rails.application.config.cache_store = :redis_cache_store, {
-  url: ENV.fetch('REDIS_URL', 'redis://127.0.0.1:6379'),
+  url: Rails.env.test? ? ENV.fetch('REDIS_URL', 'redis://127.0.0.1:6379') : ENV.fetch('REDIS_URL'),
   password: ENV.fetch('REDIS_PASSWORD', nil).presence,
   namespace: 'cache',
   reconnect_attempts: 2,

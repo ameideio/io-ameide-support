@@ -79,6 +79,23 @@ module AmeideOidcConfig
     "#{issuer_url}/protocol/openid-connect/certs"
   end
 
+  def validate_required!
+    return unless Rails.env.production?
+
+    required = {
+      'AMEIDE_OIDC_ISSUER_URL' => issuer_url,
+      'AMEIDE_OIDC_CLIENT_ID' => client_id,
+      'AMEIDE_OIDC_CLIENT_SECRET' => client_secret,
+      'AMEIDE_OIDC_CALLBACK_URL' => callback_url,
+      'AMEIDE_OIDC_ALLOWED_EMAIL_DOMAINS' => allowed_email_domains.join(','),
+      'AMEIDE_OIDC_REQUIRED_ROLES' => required_roles.join(',')
+    }
+    missing = required.select { |_key, value| value.blank? }.keys
+    return if missing.empty?
+
+    raise KeyError, "Missing required Ameide OIDC configuration: #{missing.join(', ')}"
+  end
+
   def logout_redirect_link
     endpoint = end_session_endpoint
     return ENV.fetch('LOGOUT_REDIRECT_LINK', '/') if endpoint.blank?
