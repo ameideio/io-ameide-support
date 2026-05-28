@@ -1,5 +1,7 @@
 require Rails.root.join('custom/lib/omniauth/strategies/ameide_oidc')
 
+AmeideOidcConfig.validate_required!
+
 Rails.application.config.middleware.use OmniAuth::Builder do
   provider_options = {
     issuer_url: AmeideOidcConfig.issuer_url,
